@@ -1,4 +1,3 @@
-
 files = dir('C:\Users\Guo Rui\Desktop\WiFi_CSI\csi1.dat');
 len=length(files);
 for k=1:len

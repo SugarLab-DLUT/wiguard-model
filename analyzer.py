@@ -10,10 +10,10 @@ csidata.read()
 scaled_csi: ndarray = csidata.get_scaled_csi()
 print(scaled_csi)
 print(scaled_csi.shape)
-# (packet_num, subcarrier_num, tx_antenna_num, rx_antenna_num)
+# (packet_num, subcarrier_num, rx_antenna_num, tx_antenna_num)
 # lstm
 # scaled_csi = np.abs(np.squeeze(scaled_csi[0, :, :]).T)
-
+# see https://github.com/citysu/csiread/blob/master/examples/csishow.py for csi operation
 # print(scaled_csi)
 # # TODO ant
 # ant1 = scaled_csi[:, 0]

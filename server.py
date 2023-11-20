@@ -11,5 +11,9 @@ while True:
     t = int(time())
     data = client.recv(1024)
     print(f'recv package {t} ({data.__len__()} bytes)')
+    # TODO
+    # This will accumulate more and more unnecessary files.
+    # After accessing the model, only input values should be
+    # processed each time and no files should be saved.
     with open(f'dat/csi-{t}.dat', 'wb') as f:
         f.write(data)

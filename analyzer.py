@@ -5,11 +5,12 @@ from numpy import ndarray
 from scipy import signal
 from sklearn.decomposition import PCA
 
-csidata = csiread.Intel('dat/csi.dat')
+csidata = csiread.Intel('dat/csi-temp.dat')
 csidata.read()
 scaled_csi: ndarray = csidata.get_scaled_csi()
 print(scaled_csi)
 print(scaled_csi.shape)
+
 # (packet_num, subcarrier_num, rx_antenna_num, tx_antenna_num)
 # lstm
 # scaled_csi = np.abs(np.squeeze(scaled_csi[0, :, :]).T)

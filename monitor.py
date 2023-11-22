@@ -1,8 +1,5 @@
-import threading
-
 import csiread
 import matplotlib.animation as animation
-from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -58,6 +55,16 @@ amplis = [[axs[tx, 0].plot(x, csi[0, :, rx, tx].real, label=f'rx ant{rx}')[0]
            for rx in range(rx_num)]for tx in range(tx_num)]
 phases = [[axs[tx, 1].plot(x, csi[0, :, rx, tx].imag, label=f'rx ant{rx}')[0]
            for rx in range(rx_num)]for tx in range(tx_num)]
+
+axs[tx_num, 0].set_xlabel('packets')
+axs[tx_num, 0].set_ylabel('amplitude')
+for rx in range(rx_num):
+    axs[tx_num, 0].plot(csi[:, 0, rx, 0].real, label=f'rx ant{rx}')
+
+axs[tx_num, 1].set_xlabel('packets')
+axs[tx_num, 1].set_ylabel('phase')
+for rx in range(rx_num):
+    axs[tx_num, 1].plot(csi[:, 0, rx, 0].imag, label=f'rx ant{rx}')
 
 
 def animate(i):

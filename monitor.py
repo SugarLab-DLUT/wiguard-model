@@ -16,7 +16,7 @@ gateway_ip = config.get('Network', 'gateway_ip')
 disconnect = config.get('Commands', 'disconnect').split(', ')
 reconnect = config.get('Commands', 'reconnect').split(', ')
 log_to_file = config.get('Commands', 'log_to_file')
-csidata_path = 'dat/csi-temp.dat'
+csidata_path = 'dat/csi-1701504722.dat'
 
 rx_num = 3
 tx_num = 2

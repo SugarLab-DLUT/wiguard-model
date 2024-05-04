@@ -1,12 +1,9 @@
-import toml
 import subprocess
 import time
 import csiread
 import numpy as np
 import socketio
 
-config_path = "./config.toml"
-data = toml.load(config_path)
 
 send_freq = data['Collection']['send_freq']
 collect_freq = data['Collection']['collect_freq']

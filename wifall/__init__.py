@@ -1,9 +1,12 @@
-from typing import TypedDict
+from typing import TypedDict, cast
 import toml
 
 
 class Config(TypedDict):
     server: str
+    init_cmd: str
+    log_cmd: str
+    ping_cmd: str
 
 
-config: Config = toml.load('config.toml')
+config: Config = cast(Config, toml.load('config.toml'))

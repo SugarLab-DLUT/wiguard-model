@@ -1,3 +1,11 @@
 from wifall import config
+import socketio
 
-ip = config['server']
+sio = socketio.Client()
+sio.connect(config['server'])
+@sio.event
+def connect():
+    print('Connected to server')
+@sio.event
+def disconnect():
+    print('Disconnected from server')

@@ -17,9 +17,10 @@ async def collect(ping=True, duration=0.5):
     if ping:
         ping_proc = await asyncio.create_subprocess_shell(config['ping_cmd'])
     await asyncio.sleep(duration)
-    log_proc.terminate()
+    if log_proc.returncode is None:
+        log_proc.terminate()
     await log_proc.wait()
-    if ping:
+    if ping and ping_proc.returncode is None:
         ping_proc.terminate()
         await ping_proc.wait()
     return file

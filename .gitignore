@@ -52,8 +52,8 @@ coverage.xml
 *.pot
 
 
+*.dat
 /models
-/dat
 /npy
 
 /config.toml

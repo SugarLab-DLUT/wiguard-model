@@ -53,6 +53,7 @@ coverage.xml
 
 
 *.dat
+/dat/
 /models
 /npy
 

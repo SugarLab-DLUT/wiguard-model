@@ -17,5 +17,11 @@ Afterwards, you need to provide config to make the program work correctly. You c
 Finally, run the program.
 
 ```bash
-$ python main.py
+$ python -m wifall
+```
+
+If you want to test or further develop, you can use the following command to install so that the modifications can take effect:
+
+```bash
+$ pip install --editable .
 ```

@@ -7,6 +7,7 @@ class Config(TypedDict):
     init_cmd: str
     log_cmd: str
     ping_cmd: str
+    model: str
 
 
 config: Config = cast(Config, toml.load('config.toml'))

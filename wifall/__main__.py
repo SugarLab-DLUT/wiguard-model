@@ -7,7 +7,7 @@ import socketio
 sio = socketio.AsyncClient()
 
 
-async def main():
+async def start():
     print(config['server'])
     await sio.connect(config['server'])
     try:
@@ -25,5 +25,9 @@ async def collect(data):
     await sio.emit('status', 'collected: {}'.format(file))
 
 
+def main():
+    asyncio.run(start())
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

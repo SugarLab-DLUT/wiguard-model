@@ -9,7 +9,7 @@ First, download and install the dependencies.
 ```bash
 $ git clone https://github.com/saurlax/wifall.git
 $ cd wifall
-$ pip install -r requirements.txt
+$ pip install .
 ```
 
 Afterwards, you need to provide config to make the program work correctly. You can rename the `config.example.toml` to `config.toml` and make changes based on it.
@@ -17,7 +17,7 @@ Afterwards, you need to provide config to make the program work correctly. You c
 Finally, run the program.
 
 ```bash
-$ python -m wifall
+$ wifall
 ```
 
 If you want to test or further develop, you can use the following command to install so that the modifications can take effect:

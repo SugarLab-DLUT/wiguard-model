@@ -1,5 +1,6 @@
 from wifall import config
 import wifall.collect
+from wifall.test import test
 import asyncio
 import socketio
 
@@ -22,7 +23,8 @@ async def collect(data):
     await sio.emit('status', 'collecting...')
     file = await wifall.collect.collect()
     print('saved to {}'.format(file))
-    await sio.emit('status', 'collected: {}'.format(file))
+    await sio.emit('status', 'testing: {}'.format(file))
+    await sio.emit('status', 'done: {}, result: {}'.format(file, test(file)))
 
 
 def main():

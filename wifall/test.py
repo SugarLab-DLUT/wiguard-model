@@ -26,7 +26,6 @@ N_ENCODER_LAYERS = 4  # 编码器层数
 N_DECODER_LAYERS = 4  # 解码器层数
 WEIGHT_DECAY = 0  # 权重衰减
 
-dat_path = sys.argv[1]
 pth_path = config['model']
 
 model = Transformer(dim_val=DIM_VAL,
@@ -43,17 +42,25 @@ if (not torch.cuda.is_available()):
 else:
     model.load_state_dict(torch.load(pth_path))
 
-amplitude_data = process_single_dat(dat_path)
-amplitude_data = torch.tensor(amplitude_data).float().to(device)
-amplitude_data = amplitude_data.unsqueeze(0)
 
-output = model(amplitude_data)
-pred = F.log_softmax(output, dim=1).argmax(dim=1)
-print(pred)
+def test(dat_path):
+    amplitude_data = process_single_dat(dat_path)
 
-if pred[0] == 0:
-    print('air')
-elif pred[0] == 1:
-    print('fall')
-else:
-    print('walk')
+    amplitude_data = torch.tensor(amplitude_data).float().to(device)
+    amplitude_data = amplitude_data.unsqueeze(0)
+
+    output = model(amplitude_data)
+    pred = F.log_softmax(output, dim=1).argmax(dim=1)
+    print(pred)
+    if pred[0] == 0:
+        res = 'air'
+    elif pred[0] == 1:
+        res = 'fall'
+    else:
+        res = 'walk'
+        print(res)
+    return res
+
+
+if __name__ == '__main__':
+    test(sys.argv[1])

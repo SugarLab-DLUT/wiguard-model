@@ -1,4 +1,4 @@
-server = 'wiguard.saurlax.com:3000'
+server = 'https://wiguard.saurlax.com:3000'
 
 # script to reset the wifi card
 init_cmd = 'modprobe -r iwlwifi mac80211 && modprobe iwlwifi connector_log=0x1'

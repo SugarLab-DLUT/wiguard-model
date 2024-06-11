@@ -9,7 +9,7 @@ async def init():
     await proc.wait()
 
 
-async def collect(ping=True, duration=0.5):
+async def collect(ping=True, duration=5):
     file = f'dat/{int(time.time()*1000)}.dat'
     print(f'collecting: {file}')
     log_proc = await asyncio.create_subprocess_exec(config["log_cmd"], file)

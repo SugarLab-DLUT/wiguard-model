@@ -51,11 +51,10 @@ coverage.xml
 *.mo
 *.pot
 
-
-*.dat
-/dat/
-/models
-/npy
-
-/config.toml
 .vscode
+
+dat/*
+pth/*
+!.gitkeep
+
+config.toml

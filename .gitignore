@@ -56,5 +56,4 @@ coverage.xml
 dat/*
 pth/*
 !.gitkeep
-
-config.toml
+.env

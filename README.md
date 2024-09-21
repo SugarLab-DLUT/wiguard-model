@@ -1,27 +1,26 @@
-# WiFall
+# WiGuard - Model
 
-Wireless perception fall detection system, as a collection terminal project for [WiGuard](https://github.com/saurlax/wiguard).
+Wireless sensing based health monitoring system.
 
 ## How to run
 
-First, download and install the dependencies.
+First, create a `.env` file in the root directory of the project and add the following content:
 
-```bash
-$ git clone https://github.com/saurlax/wifall.git
-$ cd wifall
-$ pip install .
+```properties
+SERVER=
 ```
 
-Afterwards, you need to provide config to make the program work correctly. You can rename the `config.example.toml` to `config.toml` and make changes based on it.
-
-Finally, run the program.
+Then, install the dependencies and run the application:
 
 ```bash
-$ wifall
+$ pip install -r requirements.txt
+$ python main.py
 ```
 
-If you want to test or further develop, you can use the following command to install so that the modifications can take effect:
+## Utils
+
+### Visualize csi data
 
 ```bash
-$ pip install --editable .
+python -m wiguard.show csidata.csv
 ```

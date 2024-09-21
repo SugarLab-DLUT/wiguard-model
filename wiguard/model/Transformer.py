@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from wifall.model.utils import *
+from wiguard.model.utils import *
 from torch.nn import ModuleList
 
 

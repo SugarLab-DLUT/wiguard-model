@@ -3,9 +3,9 @@ import torch
 import logging
 from torch.nn import functional as F
 
-from wifall.dataset import process_single_dat
-from wifall.model.Transformer import Transformer
-from wifall import config
+from wiguard.dataset import process_single_dat
+from wiguard.model.Transformer import Transformer
+from wiguard import config
 
 torch.manual_seed(0)
 logging.basicConfig(level=logging.INFO)

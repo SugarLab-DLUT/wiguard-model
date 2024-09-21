@@ -53,7 +53,7 @@ coverage.xml
 
 .vscode
 
-dat/*
-pth/*
+data/*
+models/*
 !.gitkeep
 .env

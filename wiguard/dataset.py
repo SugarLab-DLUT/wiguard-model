@@ -2,36 +2,29 @@ import os
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import random_split
-import csiread
+import pandas as pd
 
-CLIP_SIZE = 380  # 截取的数据长度
+CLIP_SIZE = 100  # 截取的数据长度
 
 
 class CSIDataset(Dataset):
     def __init__(self, data_path):
         self.data_path = data_path
-        air_files = self.read_folder(os.path.join(data_path, 'air'))
-        fall1_files = self.read_folder(
-            (os.path.join(data_path, 'fall', 'fall1')))
-        fall2_files = self.read_folder(
-            (os.path.join(data_path, 'fall', 'fall2')))
+        empyt_files = self.read_folder(os.path.join(data_path, 'empty'))
+        fall_files = self.read_folder(os.path.join(data_path, 'fall'))
         walk_files = self.read_folder(os.path.join(data_path, 'walk'))
-        fall_files = fall1_files + fall2_files
 
-        air_data = self.read_files(air_files)
+        empty_data = self.read_files(empyt_files)
         fall_data = self.read_files(fall_files)
         walk_data = self.read_files(walk_files)
 
-        air_data = self.cut_data_len(air_data)
+        empty_data = self.cut_data_len(empty_data)
         fall_data = self.cut_data_len(fall_data)
         walk_data = self.cut_data_len(walk_data)
 
-        air_data = self.sum_data(air_data)
-        fall_data = self.sum_data(fall_data)
-        walk_data = self.sum_data(walk_data)
 
-        csis = air_data + fall_data + walk_data
-        self.labels = [0] * len(air_data) + [1] * \
+        csis = empty_data + fall_data + walk_data
+        self.labels = [0] * len(empty_data) + [1] * \
             len(fall_data) + [2] * len(walk_data)
         self.amplitudes = self.compute_amplitude(csis)
 
@@ -40,32 +33,36 @@ class CSIDataset(Dataset):
 
     def read_folder(self, dir_path):
         """
-        返回文件夹中所有.dat文件的路径
+        返回文件夹中所有.csv文件的路径
         :param dir_path: 文件夹路径
-        :return: dat_file_paths 一个列表,列表中的每个元素是一个数据文件的路径
+        :return: csv_file_paths 一个列表,列表中的每个元素是一个数据文件的路径
         """
-        files = os.listdir(dir_path)
-        dat_file_paths = []
+        files = os.listdir(dir_path) # 返回文件夹路径中所有文件的名字
+        csv_file_paths = []
         for file in files:
-            if file.endswith(".dat"):
-                dat_file_paths.append(os.path.join(dir_path, file))
-        return dat_file_paths
+            if file.endswith(".csv"):
+                csv_file_paths.append(os.path.join(dir_path, file))
+        return csv_file_paths
 
     def read_files(self, data_paths):
         """
-        读取所有.dat文件中的CSI数据
+        读取所有.csv文件中的CSI数据
         :param data_paths: 一个列表,列表中的每个元素是一个数据文件的路径
         :return: csi_data 一个列表,列表中的每个元素是一个数据文件的CSI数据
         """
         csi_data = []
         for data_path in data_paths:
-            csi = csiread.Intel(data_path, if_report=False)
-            csi.read()
-            shape = csi.csi.shape
-            csi_np = np.array(csi.csi).reshape(
-                shape[0], shape[1], shape[2], shape[3])
-            csi_np = np.transpose(csi_np, (0, 3, 2, 1))
-            csi_data.append(csi_np)
+            data = pd.read_csv(data_path,header=None)
+            first_row = data.iloc[0]
+            if first_row[0] == "CSI_DATA":
+                csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+                #print(data_path)
+            else:
+                data = pd.read_csv(data_path,header=None, skiprows=1)
+                csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+
+            # 选择所有行和最后一列的值（series），遍历这个series里所有的值将其放置在csidata中 (seq_len, subcarry)
+            csi_data.append(csidata)
         return csi_data
 
     def cut_data_len(self, data_list, clip_size=CLIP_SIZE):
@@ -111,22 +108,19 @@ class CSIDataset(Dataset):
         return self.amplitudes[idx], self.labels[idx]
 
 
-def process_single_dat(dat_path):
+def process_single_dat(csv_path):
     """
     处理单个.dat文件，截取数据的中间部分，合并不同发射天线和接收天线的数据，计算振幅数据，并进行标准化
     :param dat_path: .dat文件路径
     :return: amplitude_data 振幅数据，shape: (clip_size, subcarries)
     """
-    csi = csiread.Intel(dat_path, if_report=False)
-    csi.read()
-    shape = csi.csi.shape
-    csi_np = np.array(csi.csi).reshape(shape[0], shape[1], shape[2], shape[3])
-    csi_np = np.transpose(csi_np, (0, 3, 2, 1))
+    data = pd.read_csv(csv_path, header=None)
+    csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
     # 截取每一个数据的长度为clip_size，从数据的中间截取，如果数据长度小于clip_size，则报错退出
-    if len(csi_np) < CLIP_SIZE:
+    if len(csidata) < CLIP_SIZE:
         raise ValueError('The length of data is less than CLIP_SIZE')
-    start = len(csi_np) // 2 - CLIP_SIZE // 2
-    csi_np = csi_np[start: start + CLIP_SIZE]
+    start = len(csidata) // 2 - CLIP_SIZE // 2
+    csi_np = csidata[start: start + CLIP_SIZE]
     csi_np = np.sum(csi_np, axis=(1, 2))
     amplitude_data = np.abs(csi_np)
     amplitude_data = (amplitude_data - np.mean(amplitude_data)
@@ -136,7 +130,7 @@ def process_single_dat(dat_path):
 
 if __name__ == '__main__':
     BATCH_SIZE = 2
-    csi_dataset = CSIDataset('./data')
+    csi_dataset = CSIDataset('../data')
     total_size = len(csi_dataset)
     train_size = int(total_size * 0.8)
     val_size = total_size - train_size
@@ -153,7 +147,7 @@ if __name__ == '__main__':
             class_num[l] += 1
 
     print('Train dataset:')
-    print('Air:', class_num[0])
+    print('Empty:', class_num[0])
     print('Fall:', class_num[1])
     print('Walk:', class_num[2])
 
@@ -163,6 +157,6 @@ if __name__ == '__main__':
             class_num[l] += 1
 
     print('Validation dataset:')
-    print('Air:', class_num[0])
+    print('Empty:', class_num[0])
     print('Fall:', class_num[1])
     print('Walk:', class_num[2])

@@ -11,12 +11,14 @@ def to_complex(arr):
 
 data = pd.read_csv(sys.argv[1], header=None)
 csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
-
+amplitude = np.abs(csidata)
+print(amplitude)
 
 csidata = np.vstack([to_complex(csi) for csi in csidata]).T
-print(csidata.shape)
+
 
 amplitude = np.abs(csidata)
+print(amplitude)
 plt.imshow(amplitude, cmap='jet', interpolation='nearest', aspect='auto')
 plt.colorbar(label='Amplitude')
 plt.title('ESP CSI Amplitude Heatmap')

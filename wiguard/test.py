@@ -3,17 +3,17 @@ import torch
 import logging
 from torch.nn import functional as F
 
-from wiguard.dataset import process_single_dat
-from wiguard.model.Transformer import Transformer
-from wiguard import config
+from dataset import process_single_csv
+from model.Transformer import Transformer
+# from wiguard import config
 
 torch.manual_seed(0)
 logging.basicConfig(level=logging.INFO)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logging.info("Device: {}".format(device))
 
-CLIP_SIZE = 380  # 截取的数据长度
-SUBCARRIES = 30  # 子载波数
+CLIP_SIZE = 100  # 截取的数据长度
+SUBCARRIES = 64  # 子载波数
 EPOCHS_NUM = 100
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 2
@@ -26,7 +26,7 @@ N_ENCODER_LAYERS = 4  # 编码器层数
 N_DECODER_LAYERS = 4  # 解码器层数
 WEIGHT_DECAY = 0  # 权重衰减
 
-pth_path = config['model']
+# pth_path = config['model']
 
 model = Transformer(dim_val=DIM_VAL,
                     dim_attn=DIM_ATTN,
@@ -37,14 +37,14 @@ model = Transformer(dim_val=DIM_VAL,
                     n_encoder_layers=N_ENCODER_LAYERS,
                     n_heads=N_HEADS)
 model.float().to(device)
-if (not torch.cuda.is_available()):
-    model.load_state_dict(torch.load(pth_path, map_location='cpu'))
-else:
-    model.load_state_dict(torch.load(pth_path))
+# if (not torch.cuda.is_available()):
+#     model.load_state_dict(torch.load(pth_path, map_location='cpu'))
+# else:
+#     model.load_state_dict(torch.load(pth_path))
 
 
 def test(dat_path):
-    amplitude_data = process_single_dat(dat_path)
+    amplitude_data = process_single_csv(dat_path)
 
     amplitude_data = torch.tensor(amplitude_data).float().to(device)
     amplitude_data = amplitude_data.unsqueeze(0)
@@ -58,7 +58,7 @@ def test(dat_path):
         res = 'fall'
     else:
         res = 'walk'
-        print(res)
+    print(res)
     return res
 
 

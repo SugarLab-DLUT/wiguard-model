@@ -22,7 +22,6 @@ class CSIDataset(Dataset):
         fall_data = self.cut_data_len(fall_data)
         walk_data = self.cut_data_len(walk_data)
 
-
         csis = empty_data + fall_data + walk_data
         self.labels = [0] * len(empty_data) + [1] * \
             len(fall_data) + [2] * len(walk_data)
@@ -46,7 +45,7 @@ class CSIDataset(Dataset):
 
     def read_files(self, data_paths):
         """
-        读取所有.csv文件中的CSI数据
+        读取所有.csv文件中的CSI数据，由于存在文件第一行数据不完整，将不完整文件处理
         :param data_paths: 一个列表,列表中的每个元素是一个数据文件的路径
         :return: csi_data 一个列表,列表中的每个元素是一个数据文件的CSI数据
         """
@@ -56,12 +55,10 @@ class CSIDataset(Dataset):
             first_row = data.iloc[0]
             if first_row[0] == "CSI_DATA":
                 csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
-                #print(data_path)
             else:
                 data = pd.read_csv(data_path,header=None, skiprows=1)
                 csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
 
-            # 选择所有行和最后一列的值（series），遍历这个series里所有的值将其放置在csidata中 (seq_len, subcarry)
             csi_data.append(csidata)
         return csi_data
 
@@ -92,13 +89,20 @@ class CSIDataset(Dataset):
             new_data_list.append(np.sum(data, axis=(1, 2)))
         return new_data_list
 
+    def to_complex(self, arr):
+        return np.vectorize(complex)(arr[:, 0::2], arr[:, 1::2])
+
     def compute_amplitude(self, csis_data):
         """
         使用NumPy的向量化操作计算CSI数据的幅度
-        :param csis_data: 一个列表,列表中的每个元素是一个数据文件的CSI数据, shape: (clip_size, subcarries)
-        :return: amplitude_data 一个列表，列表中的每个元素是对应的振幅数据, shape: (clip_size, subcarries)
+        :param csis_data: 一个列表,列表中的每个元素是一个数据文件的CSI数据, 包含实数和虚数 shape: (clip_size, 2*subcarries)
+        :return: amplitude_data 一个列表，列表中的一个元素是对应的振幅数据, shape: (clip_size, subcarries)
         """
-        amplitude_data = [np.abs(csi) for csi in csis_data]  # 计算CSI数据的幅度，即取绝对值
+        csi_data = []
+        for csi in csis_data:
+            csi_data.append(np.vstack([self.to_complex(sample) for sample in csi]))
+
+        amplitude_data = [np.abs(csi) for csi in csi_data]  # 计算CSI数据的幅度，即取绝对值
         return amplitude_data
 
     def __len__(self):
@@ -108,23 +112,30 @@ class CSIDataset(Dataset):
         return self.amplitudes[idx], self.labels[idx]
 
 
-def process_single_dat(csv_path):
+def process_single_csv(csv_path):
     """
-    处理单个.dat文件，截取数据的中间部分，合并不同发射天线和接收天线的数据，计算振幅数据，并进行标准化
-    :param dat_path: .dat文件路径
+    处理单个.csv文件，截取数据的中间部分，计算振幅数据，并进行标准化
+    :param csv_path: .csv文件路径
     :return: amplitude_data 振幅数据，shape: (clip_size, subcarries)
     """
     data = pd.read_csv(csv_path, header=None)
-    csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
-    # 截取每一个数据的长度为clip_size，从数据的中间截取，如果数据长度小于clip_size，则报错退出
+    first_row = data.iloc[0]
+    if first_row[0] == "CSI_DATA":
+        csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+    else:
+        data = pd.read_csv(csv_path, header=None, skiprows=1)
+        csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+
+
     if len(csidata) < CLIP_SIZE:
         raise ValueError('The length of data is less than CLIP_SIZE')
     start = len(csidata) // 2 - CLIP_SIZE // 2
     csi_np = csidata[start: start + CLIP_SIZE]
-    csi_np = np.sum(csi_np, axis=(1, 2))
+    csi_np = np.vectorize(complex)(csi_np[:, 0::2], csi_np[:, 1::2])
     amplitude_data = np.abs(csi_np)
     amplitude_data = (amplitude_data - np.mean(amplitude_data)
                       ) / np.std(amplitude_data)
+    print(amplitude_data.shape)
     return amplitude_data
 
 

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from wiguard.model.utils import *
-from torch.nn import ModuleList
+from model.utils import *
+
 
 
 class EncoderLayer(torch.nn.Module):

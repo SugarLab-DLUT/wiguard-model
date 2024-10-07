@@ -96,11 +96,11 @@ class CSIDataset(Dataset):
         """
         使用NumPy的向量化操作计算CSI数据的幅度
         :param csis_data: 一个列表,列表中的每个元素是一个数据文件的CSI数据, 包含实数和虚数 shape: (clip_size, 2*subcarries)
-        :return: amplitude_data 一个列表，列表中的一个元素是对应的振幅数据, shape: (clip_size, subcarries)
+        :return: amplitude_data 一个列表，列表中的一个元素是对应的振幅数据, shape: (clip_size, subcarries) (100, 64)
         """
         csi_data = []
         for csi in csis_data:
-            csi_data.append(np.vstack([self.to_complex(sample) for sample in csi]))
+            csi_data.append(np.vstack(self.to_complex(csi)))
 
         amplitude_data = [np.abs(csi) for csi in csi_data]  # 计算CSI数据的幅度，即取绝对值
         return amplitude_data

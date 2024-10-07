@@ -2,9 +2,12 @@ import sys
 import torch
 import logging
 from torch.nn import functional as F
+from torch.nn import CrossEntropyLoss
+from torch.utils.data import DataLoader, random_split
+from torch.utils.tensorboard import SummaryWriter
 
-from dataset import process_single_csv
-from model.Transformer import Transformer
+from wiguard.dataset import process_single_csv, CSIDataset
+from wiguard.model.Transformer import Transformer
 # from wiguard import config
 
 torch.manual_seed(0)
@@ -14,6 +17,7 @@ logging.info("Device: {}".format(device))
 
 CLIP_SIZE = 100  # 截取的数据长度
 SUBCARRIES = 64  # 子载波数
+LABELS_NUM = 3
 EPOCHS_NUM = 100
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 2
@@ -26,24 +30,24 @@ N_ENCODER_LAYERS = 4  # 编码器层数
 N_DECODER_LAYERS = 4  # 解码器层数
 WEIGHT_DECAY = 0  # 权重衰减
 
-# pth_path = config['model']
+pth_path = "./models/model0.pth"
 
 model = Transformer(dim_val=DIM_VAL,
                     dim_attn=DIM_ATTN,
                     input_size=SUBCARRIES,
                     dec_seq_len=DEC_SQL_LEN,
-                    out_seq_len=3,
+                    out_seq_len=LABELS_NUM,
                     n_decoder_layers=N_DECODER_LAYERS,
                     n_encoder_layers=N_ENCODER_LAYERS,
                     n_heads=N_HEADS)
 model.float().to(device)
-# if (not torch.cuda.is_available()):
-#     model.load_state_dict(torch.load(pth_path, map_location='cpu'))
-# else:
-#     model.load_state_dict(torch.load(pth_path))
+if (not torch.cuda.is_available()):
+    model.load_state_dict(torch.load(pth_path, map_location='cpu'))
+else:
+    model.load_state_dict(torch.load(pth_path))
 
 
-def test(dat_path):
+def test_predict(dat_path):
     amplitude_data = process_single_csv(dat_path)
 
     amplitude_data = torch.tensor(amplitude_data).float().to(device)
@@ -51,9 +55,9 @@ def test(dat_path):
 
     output = model(amplitude_data)
     pred = F.log_softmax(output, dim=1).argmax(dim=1)
-    print(pred)
+    # print(pred)
     if pred[0] == 0:
-        res = 'air'
+        res = 'empty'
     elif pred[0] == 1:
         res = 'fall'
     else:
@@ -61,6 +65,85 @@ def test(dat_path):
     print(res)
     return res
 
+def test_train():
+
+
+    # 准备数据集
+    csi_dataset = CSIDataset('../data')
+    # print(len(csi_dataset))
+    total_size = len(csi_dataset)
+    train_size = int(total_size * 0.8)
+    val_size = total_size - train_size
+    # print(train_size, val_size)
+    train_dataset, val_dataset = random_split(
+        csi_dataset, [train_size, val_size])  # 分割数据集
+
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    # print(len(train_loader), len(val_loader))
+    logging.info("Train size: {}, val size: {}".format(len(train_loader), len(val_loader)))
+
+    # Loss Function CrossEntropy
+    loss_fn = CrossEntropyLoss()
+
+    # Optimizer Adam
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # outputs: (batch_size, num_label)
+
+    writer = SummaryWriter(log_dir='./logs_train')
+
+    total_train_step = 0
+    total_val_step = 0
+    for epoch in range(EPOCHS_NUM):
+        model.train()
+        total_train_loss = 0
+        logging.info("Epoch: {}".format(epoch))
+        for data, label in train_loader:
+            data.float().to(device)
+            label.float().to(device)
+
+            # print(data.shape, label.shape)
+            # print(model(data.to(device)))
+
+            outputs = model(data)
+            # print(pred)
+            loss = loss_fn(outputs, label).float()
+            total_train_loss += loss
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+
+            total_train_step += 1
+
+
+        model.eval()
+        total_valid_loss = 0
+        total_accuracy = 0
+        with torch.no_grad():
+            for data, label in val_loader:
+                data.float().to(device)
+                label.float().to(device)
+                outputs = model(data)
+                total_accuracy += outputs.argmax(dim=1).eq(label).sum()
+                valid_loss = loss_fn(outputs, label).float()
+                total_valid_loss += valid_loss
+
+
+
+        print("step: {}".format(total_train_step), "train loss: {}".format(total_train_loss/len(train_loader)))
+        print("step: {}".format(total_train_step), "valid loss: {}".format(total_valid_loss/len(val_loader)))
+        print("step: {}".format(total_train_step), "accuracy: {}".format(total_accuracy/val_size))
+
+        writer.add_scalar('Loss/train', total_train_loss/len(train_loader), epoch)
+        writer.add_scalar('Loss/val', total_valid_loss/len(val_loader), epoch)
+        writer.add_scalar('Accuracy/val', total_accuracy/val_size, epoch)
+
+    torch.save(model.state_dict(), '../models/model0.pth')
+
+
 
 if __name__ == '__main__':
-    test(sys.argv[1])
+    test_predict(sys.argv[1])
+    # test_train()

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.utils import *
+from wiguard.model.utils import *
 
 
 
@@ -55,14 +55,14 @@ class DecoderLayer(torch.nn.Module):
         :param enc: encoder的输出
         """
 
-        a = self.attn1(x)
-        x = self.norm1(a + x)
+        a = self.attn1(x).float()
+        x = self.norm1(a + x).float()
 
-        a = self.attn2(x, kv=enc)
-        x = self.norm2(a + x)
+        a = self.attn2(x, kv=enc).float()
+        x = self.norm2(a + x).float()
 
         a = self.fc1(F.elu(self.fc2(x)))
-        x = self.norm3(x + a)
+        x = self.norm3(x + a).float()
         return x
 
 
@@ -104,13 +104,14 @@ class Transformer(torch.nn.Module):
         """
         # encoder
         # e.shape: (batch_size, seq_len, dim_val)
-        e = self.encs[0](self.pos(self.enc_input_fc(x)))
+        e = self.encs[0](self.pos(self.enc_input_fc(x.float())))
+        # print("ecoder init")
         for enc in self.encs[1:]:
             e = enc(e)
 
         # decoder
         # d.shape: (batch_size, dec_seq_len, dim_val)
-        d = self.decs[0](self.dec_input_fc(x[:, -self.dec_seq_len:]), e)
+        d = self.decs[0](self.dec_input_fc(x[:, -self.dec_seq_len:].float()), e)
         # print(x[:,-self.dec_seq_len:].shape)  # (batch_size, dec_seq_len, input_size)
         # x[:,-self.dec_seq_len:]取出了输入序列的最后dec_seq_len个时序数据，作为decoder的输入
 

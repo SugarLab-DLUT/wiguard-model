@@ -135,7 +135,7 @@ def process_single_csv(csv_path):
     amplitude_data = np.abs(csi_np)
     amplitude_data = (amplitude_data - np.mean(amplitude_data)
                       ) / np.std(amplitude_data)
-    print(amplitude_data.shape)
+    # print(amplitude_data.shape)
     return amplitude_data
 
 
@@ -147,8 +147,7 @@ if __name__ == '__main__':
     val_size = total_size - train_size
     train_dataset, val_dataset = random_split(
         csi_dataset, [train_size, val_size])  # 分割数据集
-    train_loader = DataLoader(
-        train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # 统计训练集和验证集的每种类别的数量

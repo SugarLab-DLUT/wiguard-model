@@ -6,7 +6,7 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 
-from wiguard.dataset import process_single_csv, CSIDataset
+from wiguard.dataset import process_single_csv_file, process_single_csv_data, CSIDataset
 from wiguard.model.Transformer import Transformer
 # from wiguard import config
 
@@ -47,9 +47,32 @@ else:
     model.load_state_dict(torch.load(pth_path))
 
 
-def test_predict(dat_path):
-    amplitude_data = process_single_csv(dat_path)
+def test_predict_file(csv_path):
+    '''
+    使用存放于csv文件里的csi数据，批量处理，用于模型训练
+    '''
+    amplitude_data = process_single_csv_file(csv_path)
 
+    amplitude_data = torch.tensor(amplitude_data).float().to(device)
+    amplitude_data = amplitude_data.unsqueeze(0)
+
+    output = model(amplitude_data)
+    pred = F.log_softmax(output, dim=1).argmax(dim=1)
+    # print(pred)
+    if pred[0] == 0:
+        res = 'empty'
+    elif pred[0] == 1:
+        res = 'fall'
+    else:
+        res = 'walk'
+    print(res)
+    return res
+
+def test_predict(csi_data):
+    '''
+    使用一定数量的以字符串形式传入的csi数据，进行预测。
+    '''
+    amplitude_data = process_single_csv_data(csi_data)
     amplitude_data = torch.tensor(amplitude_data).float().to(device)
     amplitude_data = amplitude_data.unsqueeze(0)
 
@@ -145,5 +168,19 @@ def test_train():
 
 
 if __name__ == '__main__':
-    test_predict(sys.argv[1])
+
+    '''
+    对单个csv文件预测
+    '''
+    #test_predict_file(sys.argv[1])
+
+    '''
+    利用以字符串形式传入的数据
+    '''
+    # data = []
+    # test_predict(data)
+
+    '''
+    训练模型
+    '''
     # test_train()

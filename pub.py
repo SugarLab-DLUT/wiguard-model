@@ -1,22 +1,10 @@
-# python 3.6
-# solve "ValueError: Unsupported callback API version..." by "pip install paho-mqtt==1.6.1"
-
 import random
 import time
-import pandas as pd
 from paho.mqtt import client as mqtt_client
-
-"""
-1883	MQTT 协议端口
-8883	MQTT/SSL 端口
-8083    MQTT/WebSocket 端口
-8080    HTTP API 端口
-18083   Dashboard 管理控制台端口
-"""
 
 broker = 'broker.emqx.io'
 port = 1883               
-topic = "wiguard/original_csi"     # 更改主题
+topic = "wiguard/original_csi"    
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 

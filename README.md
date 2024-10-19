@@ -17,7 +17,11 @@ Broker-->Nuxt.js
 First, create a `.env` file in the root directory of the project and add the following content:
 
 ```properties
-SERVER=
+BROKER = 'broker.emqx.io'
+PORT = 1883
+TOPIC_SUB = 'wiguard/original_csi'
+TOPIC_PUB = 'wiguard/after_test_csi'
+BUFFER_SIZE = 110
 ```
 
 Then, install the dependencies and run the application:

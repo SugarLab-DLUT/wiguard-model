@@ -3,11 +3,8 @@ import random
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 import json
-
-from sympy import N
 from wiguard.test import test_predict
 import os
-from paho.mqtt.enums import CallbackAPIVersion
 
 
 """

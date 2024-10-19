@@ -1,6 +1,5 @@
 import random
 from paho.mqtt import client as mqtt_client
-from paho.mqtt.enums import CallbackAPIVersion
 
 broker = 'broker.emqx.io'
 port = 1883

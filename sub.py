@@ -1,9 +1,6 @@
-# python3.6
-# solve "ValueError: Unsupported callback API version..." by pip install paho-mqtt==1.6.1
-
 import random
 from paho.mqtt import client as mqtt_client
-
+from paho.mqtt.enums import CallbackAPIVersion
 
 broker = 'broker.emqx.io'
 port = 1883
@@ -12,7 +9,7 @@ topic = "wiguard/after_test_csi"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 
-def connect_mqtt() -> mqtt_client:
+def connect_mqtt() -> mqtt_client.Client:
     # The client connected to the MQTT agent
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -20,13 +17,13 @@ def connect_mqtt() -> mqtt_client:
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION1,client_id)
+    client = mqtt_client.Client(client_id = client_id)
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
 
 
-def subscribe(client: mqtt_client):
+def subscribe(client: mqtt_client.Client):
     # The client subscribed to the topic
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")

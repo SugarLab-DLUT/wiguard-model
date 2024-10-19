@@ -28,7 +28,7 @@ def connect_mqtt():
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION1,client_id)
+    client = mqtt_client.Client(client_id=client_id)
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
@@ -36,7 +36,7 @@ def connect_mqtt():
 
 def publish(client):
     msg_count = 0
-    with open('C:\\Users\\34366\\Desktop\\1717569967.txt', 'r') as f:
+    with open('.../data.txt', 'r') as f:
         for line in f:
             time.sleep(1)
             msg = line.strip()

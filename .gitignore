@@ -57,3 +57,5 @@ data/*
 models/*
 !.gitkeep
 .env
+.conda
+.venv

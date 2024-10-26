@@ -4,7 +4,10 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import random_split
 import pandas as pd
 
-CLIP_SIZE = 100  # 截取的数据长度
+# 截取的数据长度
+CLIP_SIZE = 100
+
+LABELS = ['empty', 'fall', 'walk']
 
 
 class CSIDataset(Dataset):
@@ -36,7 +39,7 @@ class CSIDataset(Dataset):
         :param dir_path: 文件夹路径
         :return: csv_file_paths 一个列表,列表中的每个元素是一个数据文件的路径
         """
-        files = os.listdir(dir_path) # 返回文件夹路径中所有文件的名字
+        files = os.listdir(dir_path)  # 返回文件夹路径中所有文件的名字
         csv_file_paths = []
         for file in files:
             if file.endswith(".csv"):
@@ -51,13 +54,15 @@ class CSIDataset(Dataset):
         """
         csi_data = []
         for data_path in data_paths:
-            data = pd.read_csv(data_path,header=None)
+            data = pd.read_csv(data_path, header=None)
             first_row = data.iloc[0]
             if first_row[0] == "CSI_DATA":
-                csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+                csidata = np.array([np.array(eval(csi))
+                                   for csi in data.iloc[:, -1].values])
             else:
-                data = pd.read_csv(data_path,header=None, skiprows=1)
-                csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+                data = pd.read_csv(data_path, header=None, skiprows=1)
+                csidata = np.array([np.array(eval(csi))
+                                   for csi in data.iloc[:, -1].values])
 
             csi_data.append(csidata)
         return csi_data
@@ -111,6 +116,7 @@ class CSIDataset(Dataset):
     def __getitem__(self, idx):
         return self.amplitudes[idx], self.labels[idx]
 
+
 def process_single_csv_file(csv_path):
     """
     处理单个.csv文件，截取数据的中间部分，计算振幅数据，并进行标准化
@@ -121,35 +127,13 @@ def process_single_csv_file(csv_path):
     data = pd.read_csv(csv_path, header=None)
     first_row = data.iloc[0]
     if first_row[0] == "CSI_DATA":
-        csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+        csidata = np.array([np.array(eval(csi))
+                           for csi in data.iloc[:, -1].values])
     else:
         data = pd.read_csv(csv_path, header=None, skiprows=1)
-        csidata = np.array([np.array(eval(csi)) for csi in data.iloc[:, -1].values])
+        csidata = np.array([np.array(eval(csi))
+                           for csi in data.iloc[:, -1].values])
 
-
-    if len(csidata) < CLIP_SIZE:
-        raise ValueError('The length of data is less than CLIP_SIZE')
-    start = len(csidata) // 2 - CLIP_SIZE // 2
-    csi_np = csidata[start: start + CLIP_SIZE]
-    csi_np = np.vectorize(complex)(csi_np[:, 0::2], csi_np[:, 1::2])
-    amplitude_data = np.abs(csi_np)
-    amplitude_data = (amplitude_data - np.mean(amplitude_data)
-                      ) / np.std(amplitude_data)
-    # print(amplitude_data.shape)
-    return amplitude_data
-
-def process_single_csv_data(data):
-    """
-    处理以字符串形式传入的csi数据，截取数据的中间部分，计算振幅数据，并进行标准化
-    用于实际预测
-    :param csidata, 数据
-    :return: amplitude_data 振幅数据，shape: (clip_size, subcarries)
-    """
-    csidata = []
-    for row in data:
-        csidata.append(np.array(eval(row)))
-
-    csidata = np.array(csidata)
     if len(csidata) < CLIP_SIZE:
         raise ValueError('The length of data is less than CLIP_SIZE')
     start = len(csidata) // 2 - CLIP_SIZE // 2
@@ -170,7 +154,8 @@ if __name__ == '__main__':
     val_size = total_size - train_size
     train_dataset, val_dataset = random_split(
         csi_dataset, [train_size, val_size])  # 分割数据集
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # 统计训练集和验证集的每种类别的数量

@@ -1,4 +1,5 @@
 import sys
+import pandas as pd
 import torch
 import logging
 from torch.nn import functional as F
@@ -15,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logging.info("Device: {}".format(device))
 
-CLIP_SIZE = 100  # 截取的数据长度
 SUBCARRIES = 64  # 子载波数
 LABELS_NUM = 3
 EPOCHS_NUM = 100
@@ -68,28 +68,8 @@ def test_predict_file(csv_path):
     print(res)
     return res
 
-def test_predict(csi_data):
-    '''
-    使用一定数量的以字符串形式传入的csi数据，进行预测。
-    '''
-    amplitude_data = process_single_csv_data(csi_data)
-    amplitude_data = torch.tensor(amplitude_data).float().to(device)
-    amplitude_data = amplitude_data.unsqueeze(0)
-
-    output = model(amplitude_data)
-    pred = F.log_softmax(output, dim=1).argmax(dim=1)
-    # print(pred)
-    if pred[0] == 0:
-        res = 'empty'
-    elif pred[0] == 1:
-        res = 'fall'
-    else:
-        res = 'walk'
-    print(res)
-    return res
 
 def test_train():
-
 
     # 准备数据集
     csi_dataset = CSIDataset('../data')
@@ -101,10 +81,12 @@ def test_train():
     train_dataset, val_dataset = random_split(
         csi_dataset, [train_size, val_size])  # 分割数据集
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
     # print(len(train_loader), len(val_loader))
-    logging.info("Train size: {}, val size: {}".format(len(train_loader), len(val_loader)))
+    logging.info("Train size: {}, val size: {}".format(
+        len(train_loader), len(val_loader)))
 
     # Loss Function CrossEntropy
     loss_fn = CrossEntropyLoss()
@@ -137,9 +119,7 @@ def test_train():
             loss.backward()
             optimizer.step()
 
-
             total_train_step += 1
-
 
         model.eval()
         total_valid_loss = 0
@@ -153,18 +133,19 @@ def test_train():
                 valid_loss = loss_fn(outputs, label).float()
                 total_valid_loss += valid_loss
 
+        print("step: {}".format(total_train_step),
+              "train loss: {}".format(total_train_loss/len(train_loader)))
+        print("step: {}".format(total_train_step),
+              "valid loss: {}".format(total_valid_loss/len(val_loader)))
+        print("step: {}".format(total_train_step),
+              "accuracy: {}".format(total_accuracy/val_size))
 
-
-        print("step: {}".format(total_train_step), "train loss: {}".format(total_train_loss/len(train_loader)))
-        print("step: {}".format(total_train_step), "valid loss: {}".format(total_valid_loss/len(val_loader)))
-        print("step: {}".format(total_train_step), "accuracy: {}".format(total_accuracy/val_size))
-
-        writer.add_scalar('Loss/train', total_train_loss/len(train_loader), epoch)
+        writer.add_scalar('Loss/train', total_train_loss /
+                          len(train_loader), epoch)
         writer.add_scalar('Loss/val', total_valid_loss/len(val_loader), epoch)
         writer.add_scalar('Accuracy/val', total_accuracy/val_size, epoch)
 
     torch.save(model.state_dict(), '../models/model0.pth')
-
 
 
 if __name__ == '__main__':
@@ -172,7 +153,7 @@ if __name__ == '__main__':
     '''
     对单个csv文件预测
     '''
-    #test_predict_file(sys.argv[1])
+    # test_predict_file(sys.argv[1])
 
     '''
     利用以字符串形式传入的数据

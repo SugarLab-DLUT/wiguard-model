@@ -6,7 +6,8 @@ import pandas as pd
 
 # 截取的数据长度
 CLIP_SIZE = 100
-
+# 子载波数
+SUBCARRIES = 64
 LABELS = ['empty', 'fall', 'walk']
 
 

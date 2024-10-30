@@ -28,7 +28,7 @@ WEIGHT_DECAY = 0  # 权重衰减
 load_dotenv()
 torch.manual_seed(0)
 model_path = os.getenv("MODEL_PATH") or "./models/model0.pth"
-
+print(f"Model: {model_path}")
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}")

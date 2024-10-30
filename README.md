@@ -2,19 +2,6 @@
 
 Wireless sensing based health monitoring system.
 
-## Workflow
-
-```mermaid
-graph LR
-
-ESP32-->NanoMQ
-Intel5300-->NanoMQ
-NanoMQ-->Cloud
-Model[⭐Model]-->Cloud
-Cloud-->Web
-Cloud-->Client
-```
-
 ## How to run
 
 If you use a virtual environment, name it `.venv` or `.conda` as it is already added to the `.gitignore` file.
@@ -31,6 +18,25 @@ Install the dependencies and run the application:
 ```bash
 pip install -r requirements.txt
 python main.py
+```
+
+To run the project on a GPU, you need to install the correct version of PyTorch. For example, to install PyTorch 2.5.0 for CUDA 12.4, run the following command:
+
+```bash
+pip3 install torch==2.5.0 --index-url https://download.pytorch.org/whl/cu124
+```
+
+## Workflow
+
+```mermaid
+graph LR
+
+ESP32-->NanoMQ
+Intel5300-->NanoMQ
+NanoMQ-->Cloud
+Model[⭐Model]-->Cloud
+Cloud-->Web
+Cloud-->Client
 ```
 
 ## Utils
@@ -52,3 +58,5 @@ Subscribe to the MQTT broker and show:
 ```bash
 python -m wiguard.mqtt
 ```
+
+## APIs

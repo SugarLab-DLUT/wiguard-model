@@ -44,7 +44,7 @@ Cloud-->Client
 Visualize csi data:
 
 ```bash
-python -m wiguard.show csidata.csv
+python -m wiguard.live csidata.csv
 ```
 
 Predict one csi file:

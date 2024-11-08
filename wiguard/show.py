@@ -3,13 +3,12 @@ import sys
 import pandas as pd
 import numpy as np
 
-from wiguard.dataset import CLIP_SIZE, SUBCARRIES
 from wiguard.process import get_amplitude
 
-fig, ax = plt.subplots()
-plt.title('ESP CSI Amplitude Heatmap')
+fig, ax = plt.subplots(num='ESP CSI Amplitude Heatmap')
 plt.xlabel('Packet Index')
 plt.ylabel('Subcarrier Index')
+
 
 heatmap = ax.imshow([[0]], cmap='jet',
                     interpolation='nearest', aspect='auto', origin='lower')

@@ -1,36 +1,33 @@
 import os
+from re import T
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import random_split
 import pandas as pd
 
 # 截取的数据长度
-CLIP_SIZE = 100
+CLIP_SIZE = 90
 # 子载波数
 SUBCARRIES = 64
 LABELS = ['empty', 'fall', 'walk']
-
+CUT_LEN = True
+MIX = False # 是否混合多日数据
+PRINTSHORT = False # 是否打印数据长度小于clip_size的样本
+SHORTDELETE = False # 是否删除数据长度小于clip_size的样本
 
 class CSIDataset(Dataset):
     def __init__(self, data_path):
         self.data_path = data_path
-        empyt_files = self.read_folder(os.path.join(data_path, 'empty'))
-        fall_files = self.read_folder(os.path.join(data_path, 'fall'))
-        walk_files = self.read_folder(os.path.join(data_path, 'walk'))
+        self.data_files, self.labels = self.read_folder(data_path)
 
-        empty_data = self.read_files(empyt_files)
-        fall_data = self.read_files(fall_files)
-        walk_data = self.read_files(walk_files)
+        csi_data = self.read_files(self.data_files)
 
-        empty_data = self.cut_data_len(empty_data)
-        fall_data = self.cut_data_len(fall_data)
-        walk_data = self.cut_data_len(walk_data)
+        if CUT_LEN == True:
+            csi_data = self.cut_data_len(csi_data)
 
-        csis = empty_data + fall_data + walk_data
-        self.labels = [0] * len(empty_data) + [1] * \
-            len(fall_data) + [2] * len(walk_data)
-        self.amplitudes = self.compute_amplitude(csis)
+        self.amplitudes = self.compute_amplitude(csi_data)
 
+        # 归一化
         self.amplitudes = [(amplitude - np.mean(amplitude)) /
                            np.std(amplitude) for amplitude in self.amplitudes]
 
@@ -40,12 +37,32 @@ class CSIDataset(Dataset):
         :param dir_path: 文件夹路径
         :return: csv_file_paths 一个列表,列表中的每个元素是一个数据文件的路径
         """
-        files = os.listdir(dir_path)  # 返回文件夹路径中所有文件的名字
-        csv_file_paths = []
-        for file in files:
-            if file.endswith(".csv"):
-                csv_file_paths.append(os.path.join(dir_path, file))
-        return csv_file_paths
+        data_files = []
+        files_labels = []
+        if MIX:
+            subfiles = os.listdir(dir_path)
+            for subfile in subfiles:
+                subfile_path = os.path.join(dir_path, subfile)
+                for label in LABELS:
+                    label_number = LABELS.index(label)
+                    class_data_path = os.path.join(subfile_path, label)
+                    # print(class_data_path)
+                    files = os.listdir(class_data_path)
+                    for file in files:
+                        if file.endswith('.csv'):
+                            data_files.append(os.path.join(class_data_path, file))
+                            files_labels.append(label_number)
+            return data_files, files_labels
+        else:
+            for label in LABELS:
+                label_number = LABELS.index(label)
+                class_data_path = os.path.join(dir_path, label)
+                files = os.listdir(class_data_path)
+                for file in files:
+                    if file.endswith('.csv'):
+                        data_files.append(os.path.join(class_data_path, file))
+                        files_labels.append(label_number)
+            return data_files, files_labels
 
     def read_files(self, data_paths):
         """
@@ -64,7 +81,10 @@ class CSIDataset(Dataset):
                 data = pd.read_csv(data_path, header=None, skiprows=1)
                 csidata = np.array([np.array(eval(csi))
                                    for csi in data.iloc[:, -1].values])
-
+            if len(csidata) < CLIP_SIZE and PRINTSHORT:
+                print(data_path)
+                if SHORTDELETE:
+                    os.remove(data_path)
             csi_data.append(csidata)
         return csi_data
 
@@ -109,6 +129,8 @@ class CSIDataset(Dataset):
             csi_data.append(np.vstack(self.to_complex(csi)))
 
         amplitude_data = [np.abs(csi) for csi in csi_data]  # 计算CSI数据的幅度，即取绝对值
+        amplitude_data = np.array(amplitude_data)
+        print("shape", amplitude_data.shape)
         return amplitude_data
 
     def __len__(self):
@@ -142,14 +164,13 @@ def process_single_csv_file(csv_path):
     csi_np = np.vectorize(complex)(csi_np[:, 0::2], csi_np[:, 1::2])
     amplitude_data = np.abs(csi_np)
     amplitude_data = (amplitude_data - np.mean(amplitude_data)
-                      ) / np.std(amplitude_data)
-    # print(amplitude_data.shape)
+                       ) / np.std(amplitude_data)
     return amplitude_data
 
 
 if __name__ == '__main__':
     BATCH_SIZE = 2
-    csi_dataset = CSIDataset('../data')
+    csi_dataset = CSIDataset('./data')
     total_size = len(csi_dataset)
     train_size = int(total_size * 0.8)
     val_size = total_size - train_size

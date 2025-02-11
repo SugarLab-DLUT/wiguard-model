@@ -55,7 +55,9 @@ coverage.xml
 !.vscode/settings.json
 
 data/*
+pic/*
 models/*
+logs/*
 !.gitkeep
 .env
 .conda

@@ -1,13 +1,13 @@
-import sys
-import pandas as pd
 import torch
 import logging
+import sys
 from torch.nn import functional as F
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, random_split
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
-from wiguard.dataset import process_single_csv_file, process_single_csv_data, CSIDataset
+
+from wiguard.dataset import process_single_csv_file, CSIDataset
 from wiguard.model.Transformer import Transformer
 # from wiguard import config
 
@@ -18,7 +18,7 @@ logging.info("Device: {}".format(device))
 
 SUBCARRIES = 64  # 子载波数
 LABELS_NUM = 3
-EPOCHS_NUM = 100
+EPOCHS_NUM = 80
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 2
 ENC_SEQ_LEN = 6  # 编码器序列长度
@@ -28,9 +28,9 @@ DIM_ATTN = 16  # attention的维度
 N_HEADS = 4  # 多头注意力的头数
 N_ENCODER_LAYERS = 4  # 编码器层数
 N_DECODER_LAYERS = 4  # 解码器层数
-WEIGHT_DECAY = 0  # 权重衰减
+WEIGHT_DECAY = 1e-3  # 权重衰减
 
-pth_path = "./models/model0.pth"
+pth_path = "./models/model_mix_5.pth"
 
 model = Transformer(dim_val=DIM_VAL,
                     dim_attn=DIM_ATTN,
@@ -41,16 +41,18 @@ model = Transformer(dim_val=DIM_VAL,
                     n_encoder_layers=N_ENCODER_LAYERS,
                     n_heads=N_HEADS)
 model.float().to(device)
-if (not torch.cuda.is_available()):
-    model.load_state_dict(torch.load(pth_path, map_location='cpu'))
-else:
-    model.load_state_dict(torch.load(pth_path))
+
 
 
 def test_predict_file(csv_path):
     '''
     使用存放于csv文件里的csi数据，批量处理，用于模型训练
     '''
+
+    if (not torch.cuda.is_available()):
+        model.load_state_dict(torch.load(pth_path, map_location='cpu'))
+    else:
+        model.load_state_dict(torch.load(pth_path))
     amplitude_data = process_single_csv_file(csv_path)
 
     amplitude_data = torch.tensor(amplitude_data).float().to(device)
@@ -69,10 +71,10 @@ def test_predict_file(csv_path):
     return res
 
 
-def test_train():
+def test_train(log_dir='./logs'):
 
     # 准备数据集
-    csi_dataset = CSIDataset('../data')
+    csi_dataset = CSIDataset('./data')
     # print(len(csi_dataset))
     total_size = len(csi_dataset)
     train_size = int(total_size * 0.8)
@@ -96,7 +98,7 @@ def test_train():
 
     # outputs: (batch_size, num_label)
 
-    writer = SummaryWriter(log_dir='./logs_train')
+    writer = SummaryWriter(log_dir)
 
     total_train_step = 0
     total_val_step = 0
@@ -129,6 +131,7 @@ def test_train():
                 data.float().to(device)
                 label.float().to(device)
                 outputs = model(data)
+                # print(outputs, label)
                 total_accuracy += outputs.argmax(dim=1).eq(label).sum()
                 valid_loss = loss_fn(outputs, label).float()
                 total_valid_loss += valid_loss
@@ -145,23 +148,41 @@ def test_train():
         writer.add_scalar('Loss/val', total_valid_loss/len(val_loader), epoch)
         writer.add_scalar('Accuracy/val', total_accuracy/val_size, epoch)
 
-    torch.save(model.state_dict(), '../models/model0.pth')
+    torch.save(model.state_dict(), './models/model_mix_5.pth')
+
+def test_predict(data_path):
+    '''
+    使用传入的csi数据，批量处理，用于模型预测
+    '''
+    if (not torch.cuda.is_available()):
+        model.load_state_dict(torch.load(pth_path, map_location='cpu'))
+    else:
+        model.load_state_dict(torch.load(pth_path))
+    csi_dataset = CSIDataset(data_path)
+    val_loader = DataLoader(csi_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    val_size = len(csi_dataset)
+    logging.info("Test size: {}".format(len(val_loader)))
+    model.eval()
+    total_accuracy = 0
+    with torch.no_grad():
+        for data, label in val_loader:
+            # print(data)
+            data.float().to(device)
+            label.float().to(device)
+            outputs = model(data)
+            print(outputs.argmax(dim=1), label)
+            total_accuracy += outputs.argmax(dim=1).eq(label).sum()
+
+        print("accuracy: {}".format(total_accuracy/val_size))
 
 
 if __name__ == '__main__':
 
-    '''
-    对单个csv文件预测
-    '''
+    # 预测单个文件
     # test_predict_file(sys.argv[1])
 
-    '''
-    利用以字符串形式传入的数据
-    '''
-    # data = []
-    # test_predict(data)
+    # 训练模型
+    # test_train(sys.argv[1]) 
 
-    '''
-    训练模型
-    '''
-    # test_train()
+    # 测试模型
+    test_predict('./data/241214')
